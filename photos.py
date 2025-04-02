@@ -1,11 +1,12 @@
 import argparse
 import os
+import shutil
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Compare directories and find missing files.")
     parser.add_argument('src', type=str, help='Source directory')
     parser.add_argument('dest', type=str, help='Destination directory')
-    parser.add_argument('-o', '--output', type=str, required=True, help='Output file for missing file paths')
+    parser.add_argument('-o', '--output', type=str, required=True, help='Output directory for missing files')
     parser.add_argument('-e', '--ext', type=str, nargs='*', help='List of file extensions to consider')
     parser.add_argument('--skip-hash', action='store_true', help='Skip hashing')
     parser.add_argument('--follow-symlinks', action='store_true', help='Follow symbolic links')
@@ -38,10 +39,13 @@ def compare_files(src_files, dest_files, src_dir, dest_dir):
     
     return missing_files
 
-def write_missing_files(output_file, missing_files):
-    with open(output_file, 'w') as f:
-        for file in missing_files:
-            f.write(file + '\n')
+def copy_missing_files(src_dir, output_dir, missing_files):
+    os.makedirs(output_dir, exist_ok=True)
+    for file in missing_files:
+        src_file_path = os.path.join(src_dir, file)
+        dest_file_path = os.path.join(output_dir, file)
+        os.makedirs(os.path.dirname(dest_file_path), exist_ok=True)
+        shutil.copy2(src_file_path, dest_file_path)
 
 if __name__ == "__main__":
     args = parse_arguments()
@@ -50,6 +54,6 @@ if __name__ == "__main__":
     
     missing_files = compare_files(src_files, dest_files, args.src, args.dest)
     
-    write_missing_files(args.output, missing_files)
+    copy_missing_files(args.src, args.output, missing_files)
     
-    print("Missing files:", missing_files)
+    print("Missing files copied to:", args.output)
